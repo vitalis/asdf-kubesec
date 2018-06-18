@@ -1,8 +1,11 @@
 language: c
-script: asdf plugin-test kubesec https://github.com/vitalis/asdf-kubesec.git
 before_script:
   - git clone https://github.com/asdf-vm/asdf.git
   - . asdf/asdf.sh
+script:
+  - asdf plugin-add kubesec ./
+  - asdf list-all kubesec
+  - asdf plugin-test kubesec ./
 os:
   - linux
   - osx
