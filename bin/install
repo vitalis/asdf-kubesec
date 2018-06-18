@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+set \
+  -o nounset \
+  -o pipefail \
+  -o errexit
+
+# required environment variables
+: ${ASDF_INSTALL_TYPE?}
+: ${ASDF_INSTALL_VERSION?}
+: ${ASDF_INSTALL_PATH?}
+
+# detect the tool name
+readonly __dirname="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly toolname="$(basename "$(dirname "${__dirname}")")"
+
+# make a temporary download directory with a cleanup hook
+readonly TMP_DOWNLOAD_DIR="$(mktemp -d -t "asdf_kubesec_XXXXXX")"
+trap 'rm -rf "${TMP_DOWNLOAD_DIR?}"' EXIT
+
+install () {
+  local -r install_type="$1"
+  local -r version="$2"
+  local -r install_path="$3"
+
+  local -r bin_install_path="${install_path}/bin"
+  local -r download_url="$(get_download_url "${version}")"
+  local -r download_path="${TMP_DOWNLOAD_DIR}/$(get_filename "${version}")"
+
+  echo "Downloading kubesec version ${version} from ${download_url}"
+  if curl -fs "${download_url}" -o "${download_path}"; then
+    echo "Cleaning kubesec previous binaries"
+    rm -rf "${bin_install_path}/kubesec"
+
+    echo "Creating kubesec bin directory"
+    mkdir -p "${bin_install_path}"
+
+    echo "Installing kubesec"
+    mv "${download_path}" "${bin_install_path}/kubesec"
+    chmod a+x "${bin_install_path}/kubesec"
+  else
+    echo "Error: kubesec version ${version} not found" >&2
+    exit 1
+  fi
+}
+
+get_arch () {
+  uname | tr '[:upper:]' '[:lower:]'
+}
+
+get_filename () {
+  local -r version="$1"
+  local -r platform="$(get_arch)"
+  echo "kubesec-${version}-${platform}-amd64"
+}
+
+get_download_url () {
+  local -r version="$1"
+  local -r filename="$(get_filename "${version}")"
+  echo "https://github.com/shyiko/kubesec/releases/download/${version}/${filename}"
+}
+
+install "${ASDF_INSTALL_TYPE}" "${ASDF_INSTALL_VERSION}" "${ASDF_INSTALL_PATH}"
