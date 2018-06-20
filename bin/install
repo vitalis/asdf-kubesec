@@ -28,7 +28,7 @@ install () {
   local -r download_path="${TMP_DOWNLOAD_DIR}/$(get_filename "${version}")"
 
   echo "Downloading kubesec version ${version} from ${download_url}"
-  if curl -fs "${download_url}" -o "${download_path}"; then
+  if curl -Lfs "${download_url}" -o "${download_path}"; then
     echo "Cleaning kubesec previous binaries"
     rm -rf "${bin_install_path}/kubesec"
 
